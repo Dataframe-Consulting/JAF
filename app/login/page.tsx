@@ -22,15 +22,14 @@ export default async function Login({
     <div className="flex-1 flex items-center justify-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="text-center mb-7">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex justify-center">
             <Image
               src="/logo-jaf.avif"
               alt="Solo JAF"
-              width={100}
-              height={69}
+              width={110}
+              height={76}
               priority
             />
-            <span className="font-display text-[38px] leading-none">Central</span>
           </div>
           <p
             className="text-[11px] tracking-[0.14em] uppercase mt-3"
