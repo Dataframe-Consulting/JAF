@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/*
+ * Identidad JAF (jafcarniceria.com): fondo negro, marfil, dorado champagne
+ * del logo (#ded1a9) y vino de marca (#873935) como familia de acento.
+ * Tema default oscuro (la marca es black & gold); el tema claro se activa
+ * con data-theme="light" en <html> — la banda del header se queda negra
+ * en ambos temas porque es la marca.
+ * Series validadas (dataviz): Andenes #b3873a / Boulevard #478fd6 sobre #171410.
+ * El rojo queda reservado para semántica "malo" (--bad); ninguna serie lo usa.
+ */
+:root {
+  --paper: #0b0a08;
+  --surface: #171410;
+  --ink: #f2ecdd;
+  --ink-2: #c8bfa9;
+  --muted: #8f8674;
+  --line: #2a251c;
+  --grid: #242017;
+  --accent: #ded1a9;
+  --accent-ink: #141009; /* texto sobre fondos --accent */
+  --accent-soft: rgba(222, 209, 169, 0.09);
+  --band: #000000;
+  --band-bg: rgba(0, 0, 0, 0.72); /* navbar translúcida (sticky + blur) */
+  --band-ink: #f2ecdd;
+  --band-muted: #8f8674;
+  --band-line: rgba(243, 237, 230, 0.18); /* bordes de chips/controles en la navbar */
+  --band-soft: rgba(243, 237, 230, 0.1); /* píldora activa del menú */
+  --band-edge: rgba(243, 237, 230, 0.08); /* borde inferior de la navbar */
+  --good: #4fae63;
+  --bad: #e0655c;
+  --s-andenes: #b3873a;
+  --s-boulevard: #478fd6;
+  --wine: #873935;
+  --rail: rgba(255, 255, 255, 0.05); /* riel de barras horizontales */
+  --shadow: none;
+}
+
+html[data-theme="light"] {
+  --paper: #f4efe3;
+  --surface: #fdfaf2;
+  --ink: #26201a;
+  --ink-2: #57503f;
+  --muted: #8a7f68;
+  --line: #e3dac5;
+  --grid: #e9e1cd;
+  --accent: #9c8433; /* dorado profundo: el champagne del logo no contrasta en claro */
+  --accent-ink: #fdfaf2;
+  --accent-soft: rgba(156, 132, 51, 0.10);
+  --good: #3d8b4f;
+  --bad: #c04a41;
+  --s-andenes: #a4782a;
+  --s-boulevard: #2f6fb3;
+  --rail: rgba(0, 0, 0, 0.07);
+  --shadow: 0 1px 2px rgba(40, 30, 10, 0.05);
+
+  /* Navbar en claro: marfil cálido en vez de negro, con tinta oscura. */
+  --band-bg: rgba(250, 246, 236, 0.85);
+  --band-ink: #26201a;
+  --band-muted: #8a7f68;
+  --band-line: rgba(60, 48, 20, 0.2);
+  --band-soft: rgba(60, 48, 20, 0.07);
+  --band-edge: rgba(60, 48, 20, 0.12);
+}
+
+/* El wordmark champagne casi no contrasta sobre el marfil: en claro se
+   oscurece a dorado profundo con un filtro (mismo archivo de logo). */
+html[data-theme="light"] .logo-jaf {
+  filter: brightness(0.52) saturate(1.3);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-arimo), Arimo, Arial, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-cardo), Cardo, Georgia, serif;
+  letter-spacing: 0.01em;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barras horizontales: crecen desde la izquierda al montar (misma sensación
+   que la animación de Recharts en las barras verticales). */
+@keyframes hbar-crece {
+  from {
+    transform: scaleX(0);
+  }
+}
+.hbar-fill {
+  transform-origin: left;
+  animation: hbar-crece 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Recharts: quitar el cursor gris por defecto y afinar textos */
+.recharts-text {
+  fill: var(--muted);
+  font-size: 11.5px;
+}
+.recharts-cartesian-grid line {
+  stroke: var(--grid);
+}
