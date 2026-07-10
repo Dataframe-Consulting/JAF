@@ -6,11 +6,13 @@ import {
   getVentasMensual,
   getInventarioDepto,
   getStockMinimo,
+  getExistencias,
   rollup,
 } from "@/lib/data";
 import { pivot, seriesFor, sumBy, mesesClave, resolverMes, prevMonth } from "@/lib/shape";
 import { fmtCompact, fmtMoney, fmtPct, fmtMesLargo, fmtInt } from "@/lib/format";
 import { Bars } from "@/components/charts";
+import { ExistenciasTabla } from "@/components/existencias-tabla";
 import { Kpi, Panel, PageTitle, LegendSucursales } from "@/components/ui";
 
 export const revalidate = 300;
@@ -27,13 +29,14 @@ export default async function Merma({
   const scope = scopeDe(perfil, sp.s);
   const mes = resolverMes(sp.m);
 
-  const [merma, productos, mensual, diaria, inventario, stockMin] = await Promise.all([
+  const [merma, productos, mensual, diaria, inventario, stockMin, existencias] = await Promise.all([
     getMermaMensual(scope),
     getMermaProductos(scope, mes),
     getVentasMensual(scope),
     mes ? getMermaDiaria(scope, mes) : Promise.resolve([]),
     getInventarioDepto(),
     getStockMinimo(),
+    getExistencias(scope),
   ]);
 
   const mermaRows = mes ? merma.filter((r) => r.mes === mes) : merma;
@@ -212,6 +215,18 @@ export default async function Merma({
           </p>
         </Panel>
       </div>
+
+      <Panel
+        title="Existencias por artículo"
+        subtitle={`Catálogo completo (con o sin mínimo capturado) · foto al corte del respaldo · ${sucLabel} · el filtro de mes no aplica`}
+        className="mb-5"
+      >
+        <ExistenciasTabla rows={existencias} esGlobal={scope === "global"} />
+        <p className="text-[12.5px] mt-3" style={{ color: "var(--muted)" }}>
+          El mínimo es informativo: sale del campo &quot;Inventario mínimo&quot; del catálogo de
+          SICAR ({"—"} = sin capturar). Las alertas viven en el panel de stock mínimo.
+        </p>
+      </Panel>
 
       <Panel
         title={mes ? `Merma diaria · ${periodoLabel}` : "Merma mensual a costo"}

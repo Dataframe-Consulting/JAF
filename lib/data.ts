@@ -50,6 +50,7 @@ export type VendedorMesRow = { sucursal: string; vendedor: string; mes: string; 
 export type VendedorProdRow = { sucursal: string; vendedor: string; producto: string; vendido: number; utilidad: number; cantidad: number };
 export type StockMinimoRow = { articulo: string; departamento: string; categoria: string; unidad: string; existencia: number; inv_min: number; sucursal: string };
 export type CajaRow = { sucursal: string; caja: string; ventas: number; monto: number; utilidad: number };
+export type ExistenciaRow = { articulo: string; departamento: string; unidad: string; existencia: number; inv_min: number; valor_costo: number; sucursal: string };
 
 /** Mes ISO ("2026-06-01") o null = todo el periodo. */
 export type Mes = string | null;
@@ -245,6 +246,10 @@ export const getInventarioDepto = () =>
 
 export const getStockMinimo = () =>
   fetchConsolidada<StockMinimoRow>("v_stock_minimo", { order: { col: "existencia", asc: true }, limit: 200 });
+
+/** Inventario completo por artículo (con o sin mínimo capturado). */
+export const getExistencias = (s: Scope) =>
+  fetchView<ExistenciaRow>("v_existencias", s, { order: { col: "valor_costo" }, limit: 2000 });
 
 /** Lista de meses con datos (para el selector del header). Boulevard llega hasta jul 2021. */
 export async function getMeses(): Promise<string[]> {
