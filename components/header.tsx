@@ -191,45 +191,20 @@ export function Header({ meses, perfil }: { meses: string[]; perfil: Perfil }) {
               <span className="hidden sm:inline">Consolidado · ambas sucursales</span>
             </span>
           ) : (
-            <>
-              {/* Sucursal: dropdown en móvil, pastillas en desktop. */}
-              <select
-                aria-label="Sucursal"
-                value={scope}
-                onChange={(e) => router.push(`${pathname}${buildQs(e.target.value, mes)}`)}
-                className="lg:hidden text-[12.5px] font-semibold rounded-full px-3 py-1.5 cursor-pointer"
-                style={selectStyle}
-              >
-                {SCOPES.map((s) => (
-                  <option key={s.value} value={s.value} style={{ color: "#221a15" }}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <nav
-                className="hidden lg:inline-flex rounded-full p-[3px] gap-[2px]"
-                style={{ border: "1px solid var(--band-line)" }}
-                aria-label="Sucursal"
-              >
-                {SCOPES.map((s) => {
-                  const active = scope === s.value;
-                  return (
-                    <Link
-                      key={s.value}
-                      href={`${pathname}${buildQs(s.value, mes)}`}
-                      className="text-[12.5px] font-semibold px-4 py-1.5 rounded-full transition-colors"
-                      style={
-                        active
-                          ? { background: "var(--accent)", color: "var(--accent-ink)" }
-                          : { color: "var(--band-muted)" }
-                      }
-                    >
-                      {s.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </>
+            // Sucursal: dropdown en todos los tamaños (mismo trato que el selector de mes).
+            <select
+              aria-label="Sucursal"
+              value={scope}
+              onChange={(e) => router.push(`${pathname}${buildQs(e.target.value, mes)}`)}
+              className="text-[12.5px] font-semibold rounded-full px-3 py-1.5 cursor-pointer"
+              style={selectStyle}
+            >
+              {SCOPES.map((s) => (
+                <option key={s.value} value={s.value} style={{ color: "#221a15" }}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
           )}
 
           {/* En móvil, Configuración y Salir viven en el menú hamburguesa. */}

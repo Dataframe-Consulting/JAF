@@ -294,8 +294,8 @@ export default async function Dashboard({
               }`
             : mes && vista === "mes"
               ? scope === "global"
-                ? "Comparativo por sucursal · caja de mostrador"
-                : "Caja de mostrador"
+                ? "Comparativo por sucursal · todas las cajas de venta"
+                : "Todas las cajas de venta"
               : comparacionAnio
                 ? `Mismo mes, un color por año · ${fmtMesLargo(enCurso)} va parcial${
                     scope === "global" ? " · suma de ambas sucursales" : ""

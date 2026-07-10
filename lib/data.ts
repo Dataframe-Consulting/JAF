@@ -48,7 +48,8 @@ export type VendedorRow = {
 };
 export type VendedorMesRow = { sucursal: string; vendedor: string; mes: string; ventas: number; monto: number; utilidad: number };
 export type VendedorProdRow = { sucursal: string; vendedor: string; producto: string; vendido: number; utilidad: number; cantidad: number };
-export type StockMinimoRow = { articulo: string; departamento: string; categoria: string; unidad: string; existencia: number; inv_min: number };
+export type StockMinimoRow = { articulo: string; departamento: string; categoria: string; unidad: string; existencia: number; inv_min: number; sucursal: string };
+export type CajaRow = { sucursal: string; caja: string; ventas: number; monto: number; utilidad: number };
 
 /** Mes ISO ("2026-06-01") o null = todo el periodo. */
 export type Mes = string | null;
@@ -231,6 +232,11 @@ export async function getVentasVendedor(s: Scope, mes: Mes = null): Promise<Vend
   });
 }
 
+export function getVentasCaja(s: Scope, mes: Mes = null) {
+  const { view, eq } = pickView(mes, "v_ventas_caja", "v_ventas_caja_mensual");
+  return fetchView<CajaRow>(view, s, { order: { col: "monto" }, limit: 100, eq });
+}
+
 export const getInventarioDepto = () =>
   fetchConsolidada<InventarioDeptoRow>("v_inventario_departamento", {
     order: { col: "valor_costo" },
@@ -240,11 +246,11 @@ export const getInventarioDepto = () =>
 export const getStockMinimo = () =>
   fetchConsolidada<StockMinimoRow>("v_stock_minimo", { order: { col: "existencia", asc: true }, limit: 200 });
 
-/** Lista de meses con datos (para el selector del header). */
+/** Lista de meses con datos (para el selector del header). Boulevard llega hasta jul 2021. */
 export async function getMeses(): Promise<string[]> {
-  const rows = await fetchView<{ mes: string }>("v_ventas_mensual", "Andenes", {
+  const rows = await fetchView<{ mes: string }>("v_ventas_mensual", "global", {
     order: { col: "mes", asc: true },
-    limit: 100,
+    limit: 300,
   });
   return [...new Set(rows.map((r) => r.mes))];
 }

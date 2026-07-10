@@ -20,7 +20,7 @@ export default async function AppLayout({
         className="text-center text-[12.5px] py-5"
         style={{ color: "var(--muted)" }}
       >
-        JAF Central · prototipo · datos al 7 jul 2026 · Dataframe AI
+        JAF Central · datos reales de ambas sucursales al 7 jul 2026 · Dataframe AI
       </footer>
     </>
   );

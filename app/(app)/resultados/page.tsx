@@ -13,7 +13,7 @@ import {
 import { pivot, seriesFor, sumBy, resolverMes, prevMonth, prevYear } from "@/lib/shape";
 import { fmtCompact, fmtMoney, fmtPct, fmtInt, fmtMes, fmtMesLargo } from "@/lib/format";
 import { Bars } from "@/components/charts";
-import { Kpi, Panel, PageTitle, LegendSucursales } from "@/components/ui";
+import { Kpi, Panel, PageTitle, LegendSucursales, SegmentToggle } from "@/components/ui";
 
 export const revalidate = 300;
 
@@ -35,11 +35,14 @@ function plDe(
   mensual: MesRow[],
   merma: MermaMesRow[],
   cortesias: CortesiaRow[],
-  incluye: (mes: string) => boolean
+  incluye: (mes: string) => boolean,
+  sucursal?: string
 ): PL {
-  const v = mensual.filter((r) => incluye(r.mes));
-  const m = merma.filter((r) => incluye(r.mes));
-  const c = cortesias.filter((r) => incluye(r.mes));
+  const de = <T extends { mes: string; sucursal: string }>(rows: T[]) =>
+    rows.filter((r) => incluye(r.mes) && (!sucursal || r.sucursal === sucursal));
+  const v = de(mensual);
+  const m = de(merma);
+  const c = de(cortesias);
   const ventas = sumBy(v, "monto");
   const utilidad = sumBy(v, "utilidad");
   const costoDe = (concepto: string) =>
@@ -74,12 +77,15 @@ const LINEAS: { nombre: string; get: (p: PL) => number; fuerte?: boolean }[] = [
 export default async function Resultados({
   searchParams,
 }: {
-  searchParams: Promise<{ s?: string; m?: string }>;
+  searchParams: Promise<{ s?: string; m?: string; v?: string }>;
 }) {
   const sp = await searchParams;
   const perfil = await requirePerfil();
   const scope = scopeDe(perfil, sp.s);
   const mes = resolverMes(sp.m);
+  // Toggle del P&L: columnas por periodo (default) o una sucursal por columna
+  // (solo tiene sentido en alcance global).
+  const vistaSuc = sp.v === "suc" && scope === "global";
 
   const [mensual, merma, cortesias, unidades, cortesiasDia] = await Promise.all([
     getVentasMensual(scope),
@@ -91,16 +97,42 @@ export default async function Resultados({
 
   const pl = plDe(mensual, merma, cortesias, (m) => (mes ? m === mes : true));
 
-  // Columnas del estado de resultados: mes actual + comparativos, o un año por columna.
+  // Columnas del estado de resultados: mes actual + comparativos, un año por
+  // columna, o (toggle) una sucursal por columna sobre el periodo elegido.
   const anios = [...new Set(mensual.map((r) => r.mes.slice(0, 4)))].sort();
-  const columnas = mes
+  const enPeriodo = (m: string) => (mes ? m === mes : true);
+  const plCols = vistaSuc
     ? [
-        { label: fmtMesLargo(mes), incluye: (m: string) => m === mes },
-        { label: fmtMesLargo(prevMonth(mes)), incluye: (m: string) => m === prevMonth(mes) },
-        { label: fmtMesLargo(prevYear(mes)), incluye: (m: string) => m === prevYear(mes) },
+        { label: "Andenes", pl: plDe(mensual, merma, cortesias, enPeriodo, "Andenes") },
+        { label: "Boulevard", pl: plDe(mensual, merma, cortesias, enPeriodo, "Boulevard") },
+        { label: "Ambas", pl: plDe(mensual, merma, cortesias, enPeriodo) },
       ]
-    : anios.map((a) => ({ label: a, incluye: (m: string) => m.slice(0, 4) === a }));
-  const plCols = columnas.map((c) => ({ label: c.label, pl: plDe(mensual, merma, cortesias, c.incluye) }));
+    : (mes
+        ? [
+            { label: fmtMesLargo(mes), incluye: (m: string) => m === mes },
+            { label: fmtMesLargo(prevMonth(mes)), incluye: (m: string) => m === prevMonth(mes) },
+            { label: fmtMesLargo(prevYear(mes)), incluye: (m: string) => m === prevYear(mes) },
+          ]
+        : anios.map((a) => ({ label: a, incluye: (m: string) => m.slice(0, 4) === a }))
+      ).map((c) => ({ label: c.label, pl: plDe(mensual, merma, cortesias, c.incluye) }));
+
+  // Andenes solo tiene datos desde sep 2024: en global hay que decirlo, porque
+  // los periodos anteriores reflejan únicamente Boulevard.
+  const andenesDesde = mensual.filter((r) => r.sucursal === "Andenes").map((r) => r.mes).sort()[0];
+  const boulevardDesde = mensual.filter((r) => r.sucursal === "Boulevard").map((r) => r.mes).sort()[0];
+  const notaAsimetria =
+    scope === "global" && !mes && andenesDesde && boulevardDesde && andenesDesde > boulevardDesde
+      ? `Andenes aporta datos desde ${fmtMesLargo(andenesDesde)}; los periodos anteriores reflejan solo Boulevard.`
+      : null;
+
+  const hrefPl = (suc: boolean) => {
+    const p = new URLSearchParams();
+    if (scope !== "global") p.set("s", scope);
+    if (sp.m) p.set("m", sp.m);
+    if (suc) p.set("v", "suc");
+    const q = p.toString();
+    return q ? `/resultados?${q}` : "/resultados";
+  };
 
   // Cortesías + publicidad + consumo interno agregados por mes o por día (a costo).
   const cortesiasSerie = Object.values(
@@ -146,7 +178,7 @@ export default async function Resultados({
       <PageTitle title="Estado de resultados" note={`${sucLabel} · ${periodoLabel}`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-        <Kpi label={mes ? `Ventas · ${periodoLabel}` : "Ventas del periodo"} value={fmtCompact(pl.ventas)} context="caja de mostrador" />
+        <Kpi label={mes ? `Ventas · ${periodoLabel}` : "Ventas del periodo"} value={fmtCompact(pl.ventas)} context="todas las cajas de venta" />
         <Kpi
           label="Utilidad bruta"
           value={fmtCompact(pl.utilidad)}
@@ -163,9 +195,21 @@ export default async function Resultados({
       <Panel
         title="Estado de resultados con % vertical"
         subtitle={
-          mes
-            ? "Mes seleccionado vs mes anterior y mismo mes del año anterior · % sobre la venta de cada periodo"
-            : "Un año por columna · % sobre la venta de cada año"
+          vistaSuc
+            ? `Una sucursal por columna · ${periodoLabel} · % sobre la venta de cada una`
+            : mes
+              ? "Mes seleccionado vs mes anterior y mismo mes del año anterior · % sobre la venta de cada periodo"
+              : "Un año por columna · % sobre la venta de cada año"
+        }
+        actions={
+          scope === "global" ? (
+            <SegmentToggle
+              options={[
+                { label: mes ? "Comparativo" : "Por año", href: hrefPl(false), active: !vistaSuc },
+                { label: "Por sucursal", href: hrefPl(true), active: vistaSuc },
+              ]}
+            />
+          ) : undefined
         }
         className="mb-5"
       >
@@ -208,6 +252,12 @@ export default async function Resultados({
           Merma, cortesías, publicidad y consumo interno valuados a costo de la mercancía. El
           resultado es operativo de mercancía: SICAR no registra gastos de operación (nómina,
           renta, energía), así que no se incluyen.
+          {notaAsimetria && (
+            <>
+              {" "}
+              <span style={{ color: "var(--ink-2)" }}>{notaAsimetria}</span>
+            </>
+          )}
         </p>
       </Panel>
 

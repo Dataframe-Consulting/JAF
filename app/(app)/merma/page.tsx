@@ -52,7 +52,7 @@ export default async function Merma({
     .sort((a, b) => b.costo - a.costo)
     .slice(0, 12);
 
-  // Inventario: foto consolidada al corte del respaldo (el catálogo es idéntico en ambas sucursales).
+  // Inventario: foto al corte de cada respaldo, sumando ambas sucursales (catálogos independientes).
   const invRows = inventario
     .filter((d) => d.articulos > 0 || d.valor_costo !== 0)
     .sort((a, b) => b.valor_costo - a.valor_costo);
@@ -119,6 +119,7 @@ export default async function Merma({
                   style={{ color: "var(--muted)" }}
                 >
                   <th className="py-2 pr-3 font-semibold">Artículo</th>
+                  <th className="py-2 px-3 font-semibold">Sucursal</th>
                   <th className="py-2 px-3 font-semibold text-right">Existencia</th>
                   <th className="py-2 px-3 font-semibold text-right">Mínimo</th>
                   <th className="py-2 pl-3 font-semibold">Estado</th>
@@ -129,8 +130,9 @@ export default async function Merma({
                   const alerta = r.existencia <= r.inv_min;
                   const agotado = r.existencia <= 0;
                   return (
-                    <tr key={r.articulo} style={{ borderTop: "1px solid var(--line)" }}>
+                    <tr key={`${r.sucursal}·${r.articulo}`} style={{ borderTop: "1px solid var(--line)" }}>
                       <td className="py-2 pr-3">{r.articulo}</td>
+                      <td className="py-2 px-3" style={{ color: "var(--ink-2)" }}>{r.sucursal}</td>
                       <td
                         className="py-2 px-3 text-right font-semibold"
                         style={{ color: alerta ? "var(--bad)" : "var(--ink)" }}
@@ -169,7 +171,7 @@ export default async function Merma({
 
         <Panel
           title="Inventario actual por departamento"
-          subtitle="Foto al corte del respaldo (7 jul 2026) · catálogo consolidado, idéntico en ambas sucursales · los filtros de sucursal y mes no aplican"
+          subtitle="Foto al corte de los respaldos (jul 2026) · suma de ambas sucursales · los filtros de sucursal y mes no aplican"
         >
           <div className="overflow-x-auto">
             <table className="w-full text-[13px] tnum">

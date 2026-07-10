@@ -8,6 +8,7 @@ import {
   getHoras,
   getCredito,
   getVentasVendedor,
+  getVentasCaja,
   rollup,
 } from "@/lib/data";
 import Link from "next/link";
@@ -50,7 +51,7 @@ export default async function Ventas({
   const mes = resolverMes(sp.m);
   const vista = sp.v === "anio" ? "anio" : "mes";
 
-  const [mensual, categorias, productos, pagos, horas, diaria, credito, vendedores] =
+  const [mensual, categorias, productos, pagos, horas, diaria, credito, vendedores, cajas] =
     await Promise.all([
       getVentasMensual(scope),
       getCategorias(scope, mes),
@@ -60,6 +61,7 @@ export default async function Ventas({
       mes ? getVentasDiaria(scope, mes) : Promise.resolve([]),
       getCredito(scope),
       getVentasVendedor(scope, mes),
+      getVentasCaja(scope, mes),
     ]);
 
   const filas = mes ? mensual.filter((r) => r.mes === mes) : mensual;
@@ -98,6 +100,17 @@ export default async function Ventas({
       ticket: v.ventas > 0 ? v.monto / v.ventas : 0,
       utilidad: v.utilidad,
       ultima: vendUltima.get(v.vendedor) ?? null,
+    }));
+
+  // Venta por caja: dónde se cobró (Boulevard opera varias cajas; las internas
+  // — merma, cortesías, publicidad — quedan fuera de la vista).
+  const cajasTotal = sumBy(cajas, "monto");
+  const cajasData = rollup(cajas, "caja", ["ventas", "monto", "utilidad"])
+    .sort((a, b) => b.monto - a.monto)
+    .map((c) => ({
+      name: c.caja,
+      value: c.monto,
+      extra: `${fmtPct((c.monto / cajasTotal) * 100)} · ${fmtInt(c.ventas)} ventas`,
     }));
 
   const pagosTotal = sumBy(pagos, "monto");
@@ -253,8 +266,10 @@ export default async function Ventas({
                   </>
                 )}
               </>
+            ) : mensual.length ? (
+              `${fmtMesLargo(mensual[0].mes)} – ${fmtMesLargo(mensual[mensual.length - 1].mes)}`
             ) : (
-              "sep 2024 – jul 2026"
+              "—"
             )
           }
         />
@@ -267,7 +282,7 @@ export default async function Ventas({
               : "—"
           }
         />
-        <Kpi label="Ventas" value={fmtInt(numVentas)} context="tickets de mostrador" />
+        <Kpi label="Ventas" value={fmtInt(numVentas)} context="tickets · todas las cajas de venta" />
         <Kpi
           label="Ticket promedio"
           value={numVentas > 0 ? fmtMoney(ventaTotal / numVentas) : "—"}
@@ -364,9 +379,17 @@ export default async function Ventas({
       </Panel>
 
       <div className="grid lg:grid-cols-2 gap-5 mb-5">
-        <Panel title="Venta por categoría" subtitle={`Top 12 · ${periodoLabel} · con margen bruto`}>
-          <HBars data={cats} />
-        </Panel>
+        <div className="grid gap-5 content-start">
+          <Panel title="Venta por categoría" subtitle={`Top 12 · ${periodoLabel} · con margen bruto`}>
+            <HBars data={cats} />
+          </Panel>
+          <Panel
+            title="Venta por caja"
+            subtitle={`Dónde se cobró · ${periodoLabel} · cajas internas (merma, cortesías, publicidad) fuera`}
+          >
+            <HBars data={cajasData} />
+          </Panel>
+        </div>
         <div className="grid gap-5 content-start">
           <Panel title="Formas de pago" subtitle={`Monto cobrado y % de participación por tipo de pago · ${periodoLabel}`}>
             <HBars data={pagosData} />

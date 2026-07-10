@@ -84,7 +84,13 @@ export default async function Compras({
           value={fmtCompact(compraTotal)}
           delta={delta !== null ? fmtDelta(delta) : undefined}
           deltaGood={(delta ?? 0) <= 0}
-          context={mes ? `vs ${fmtMesLargo(prevMonth(mes))}` : "sep 2024 – jul 2026"}
+          context={
+            mes
+              ? `vs ${fmtMesLargo(prevMonth(mes))}`
+              : mensual.length
+                ? `${fmtMesLargo(mensual[0].mes)} – ${fmtMesLargo(mensual[mensual.length - 1].mes)}`
+                : "—"
+          }
         />
         <Kpi label="Compras registradas" value={fmtInt(numCompras)} context={mes ? "en el mes" : "en el periodo"} />
         <Kpi
@@ -101,7 +107,7 @@ export default async function Compras({
 
       <Panel
         title="Compra mensual"
-        subtitle="El respaldo de SICAR trae un solo libro de compras para el negocio; el selector de sucursal no aplica en este módulo"
+        subtitle="Libros de compras de ambas sucursales unificados (sin duplicados entre sí); el selector de sucursal no aplica en este módulo"
         className="mb-5"
       >
         <Bars
